@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="UserDao">
+	<!--获取exam+exam_org信息，以 exam_org行数为-->
+	<select id="getUserInfo" parameterType="com.cas.entity.account.User" resultType="com.cas.entity.account.User">
+		select 
+			id,name,city
+		from
+			t_user
+	</select>
+</mapper>

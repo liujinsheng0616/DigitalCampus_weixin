@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd"
+	default-autowire="byName">
+	<description>Spring-数据源配置</description>
+	<bean id="weixinDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="url" value="${dataSource.jdbcUrl}" />
+		<property name="username" value="${dataSource.user}"/>
+		<property name="password" value="${dataSource.password}" />
+		<property name="driverClassName" value="${dataSource.driverClass}" />
+		<!-- 参数配置 -->
+		<property name="initialSize" value="5"></property>
+		<property name="maxActive" value="30"></property>
+		<property name="maxIdle" value="20"></property>
+		<property name="minIdle" value="1"></property>
+		<!-- 设置在自动回收超时连接的时候打印连接的超时错误  -->
+		<property name="logAbandoned" value="true"/>
+		<!-- 设置自动回收超时连接 -->
+		<property name="removeAbandoned" value="true"/>
+		<!-- 自动回收超时时间(以秒数为单位) -->
+		<property name="removeAbandonedTimeout" value="10"/>
+		<!-- 超时等待时间以毫秒为单位  -->
+		<property name="maxWait" value="100"/>
+	</bean>
+	<bean id="weixinSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="weixinDataSource" />
+		<property name="configLocation" value="classpath:datasource/sqlMapConfig.xml"></property>
+		<property name="typeAliasesPackage" value="com.cas.entity"></property>
+		<property name="mapperLocations">
+			<list>
+				<value>classpath:datasource/mapper/*Mapper.xml</value>
+			</list>
+		</property>
+	</bean>
+	<bean id="weixinSqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="weixinSessionFactory" />
+	</bean>
+	<!-- 配置事务管理器 -->
+	<bean id="weixinTxManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="weixinDataSource" />
+	</bean>
+ 	<!-- 配置事务的传播特性 -->
+	<tx:advice id="weixinTxAdvice" transaction-manager="weixinTxManager">
+		<tx:attributes>
+			<tx:method name="add*" propagation="REQUIRED" rollback-for="Exception" />
+			<tx:method name="update*" propagation="REQUIRED" rollback-for="Exception" />
+			<tx:method name="delete*" propagation="REQUIRED" rollback-for="Exception" />
+			<tx:method name="get*" propagation="REQUIRED" rollback-for="Exception" />
+		</tx:attributes>
+	</tx:advice>
+ 	<!-- 事务aop -->
+	<aop:config proxy-target-class="true">
+		<aop:advisor advice-ref="weixinTxAdvice" pointcut="execution(* com.cas.service..*.*(..))" />
+	</aop:config>
+</beans>
